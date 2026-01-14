@@ -59,7 +59,7 @@ describe("tool.bash", () => {
           testCtx,
         )
         expect(result.metadata.exit).toBe(0)
-        expect(result.metadata.output.trim()).toBe(sessionID)
+        expect(result.metadata.output.trim()).toBe(testCtx.sessionID)
       },
     })
   })

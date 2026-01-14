@@ -302,8 +302,16 @@ export const RunCommand = cmd({
         describe: "show thinking blocks",
         default: false,
       })
+      .option("dangerously-skip-permissions", {
+        type: "boolean",
+        describe: "Skip all permission prompts (use with extreme caution)",
+      })
   },
   handler: async (args) => {
+    if (args.dangerouslySkipPermissions || Flag.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS) {
+      PermissionNext.setSkipPermissions(true)
+    }
+
     let message = [...args.message, ...(args["--"] || [])]
       .map((arg) => (arg.includes(" ") ? `"${arg.replace(/"/g, '\\"')}"` : arg))
       .join(" ")

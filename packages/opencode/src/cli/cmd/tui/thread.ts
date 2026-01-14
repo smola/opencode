@@ -14,6 +14,7 @@ import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 import { TuiConfig } from "@/config/tui"
 import { Instance } from "@/project/instance"
+import { Flag } from "@/flag/flag"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -97,11 +98,20 @@ export const TuiThreadCommand = cmd({
       .option("agent", {
         type: "string",
         describe: "agent to use",
+      })
+      .option("dangerously-skip-permissions", {
+        type: "boolean",
+        describe: "Skip all permission prompts (use with extreme caution)",
       }),
   handler: async (args) => {
-    // Keep ENABLE_PROCESSED_INPUT cleared even if other code flips it.
-    // (Important when running under `bun run` wrappers on Windows.)
     const unguard = win32InstallCtrlCGuard()
+    if (args.fork && !args.continue && !args.session) {
+      UI.error("--fork requires --continue or --session")
+      process.exit(1)
+    }
+    if (args.dangerouslySkipPermissions || Flag.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS) {
+      process.env.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS = "true"
+    }
     try {
       // Must be the very first thing — disables CTRL_C_EVENT before any Worker
       // spawn or async work so the OS cannot kill the process group.
@@ -212,6 +222,7 @@ export const TuiThreadCommand = cmd({
             model: args.model,
             prompt,
             fork: args.fork,
+            dangerouslySkipPermissions: args.dangerouslySkipPermissions || Flag.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS,
           },
         })
       } finally {

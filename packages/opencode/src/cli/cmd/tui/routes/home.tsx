@@ -129,6 +129,9 @@ export function Home() {
             <Tips />
           </Show>
         </box>
+        <Show when={args.dangerouslySkipPermissions}>
+          <text fg={theme.warning}>△ YOLO mode</text>
+        </Show>
         <box flexGrow={1} minHeight={0} />
         <Toast />
       </box>
