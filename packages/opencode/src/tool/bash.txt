@@ -2,7 +2,15 @@ Executes a given bash command in a persistent shell session with optional timeou
 
 All commands run in ${directory} by default. Use the `workdir` parameter if you need to run a command in a different directory. AVOID using `cd <directory> && <command>` patterns - use `workdir` instead.
 
-IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO NOT use it for file operations (reading, writing, editing, searching, finding files) - use the specialized tools for this instead.
+IMPORTANT: This tool is for terminal operations like git, npm, docker, etc. DO NOT use it for file operations (reading, writing, editing, searching, finding files) - use the specialized tools for this instead. For example:
+```
+# Searching content:
+Bash(command="grep -r foo") # BAD
+Grep(pattern="foo") # GOOD
+# Finding file
+Bash(command="find -name '*.ts'") # BAD
+Glob(pattern="**/*.ts") # GOOD
+```
 
 Before executing the command, please follow these steps:
 
