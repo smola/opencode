@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "atlassian": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/sse",
+      "enabled": false
+    },
+    "datadog": {
+      "type": "remote",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery",
+      "enabled": false
+    }
+  },
+  "permission": {
+    "edit": "deny",
+    "bash": {
+      "*": "deny",
+      "pwd": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "ls *": "allow",
+      "tail *": "allow",
+      "head *": "allow",
+      "cat *": "allow",
+      "find *": "allow"
+    },
+    "list": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "webfetch": "deny",
+    "doom_loop": "deny",
+    "external_directory": "deny"
+  }
+}

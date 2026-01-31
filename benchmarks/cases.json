@@ -1,0 +1,42 @@
+[
+  {
+    "id": "where-is-anthropic-system-prompt",
+    "repo": "github.com/anomalyco/opencode",
+    "commit": "f34b509fe73e2a6273529ea777d14d4f2199fdfb",
+    "prompt": "Give the path of the file defining the main system prompt to be used with Anthropic.",
+    "allowed_tools": ["read", "grep", "glob", "bash/ls", "list"],
+    "flag": "packages/opencode/src/session/prompt/anthropic.txt"
+  },
+  {
+    "id": "where-is-bash-txt",
+    "repo": "github.com/anomalyco/opencode",
+    "commit": "f34b509fe73e2a6273529ea777d14d4f2199fdfb",
+    "prompt": "Give me the path of the file defining the instructions for the bash tool.",
+    "allowed_tools": ["read", "grep", "glob", "bash/ls", "list"],
+    "flag": "packages/opencode/src/tool/bash.txt"
+  },
+  {
+    "id": "where-is-oauth-callback",
+    "repo": "github.com/anomalyco/opencode",
+    "commit": "f34b509fe73e2a6273529ea777d14d4f2199fdfb",
+    "prompt": "In which file is the OAuth callback defined for MCP servers?",
+    "allowed_tools": ["read", "grep", "glob", "bash/ls", "list"],
+    "flag": "packages/opencode/src/mcp/oauth-callback.ts"
+  },
+  {
+    "id": "lib-for-md-in-desktop",
+    "repo": "github.com/anomalyco/opencode",
+    "commit": "f34b509fe73e2a6273529ea777d14d4f2199fdfb",
+    "prompt": "What library is used by the desktop version of opencode to parse markdown?",
+    "allowed_tools": ["read", "grep", "glob", "bash/ls", "list"],
+    "flag": "comrak"
+  },
+  {
+    "id": "dd-trace-java-look-for-test",
+    "repo": "github.com/DataDog/dd-trace-java",
+    "commit": "a0832db42833b5e5038e36808da67afc6697465d",
+    "prompt": "What is the file with tests for IAST with Vert.x 5 Event Bus?",
+    "allowed_tools": ["read", "grep", "glob", "bash/ls", "list"],
+    "flag": "dd-java-agent/instrumentation/vertx/vertx-web/vertx-web-5.0/src/test/groovy/server/IastVertxHttpServerTest.groovy"
+  }
+]
