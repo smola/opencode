@@ -2,25 +2,53 @@ import { Ripgrep } from "../file/ripgrep"
 
 import { Instance } from "../project/instance"
 
-import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
-import PROMPT_DEFAULT from "./prompt/default.txt"
-import PROMPT_BEAST from "./prompt/beast.txt"
-import PROMPT_GEMINI from "./prompt/gemini.txt"
+import Handlebars from "handlebars"
 
-import PROMPT_CODEX from "./prompt/codex.txt"
+import PROMPT_BEAST from "./prompt/beast.txt"
+import PROMPT_DEFAULT from "./prompt/default.txt"
 import PROMPT_TRINITY from "./prompt/trinity.txt"
+import PROMPT_UNIFIED from "./prompt/unified.hbs"
 import type { Provider } from "@/provider/provider"
 import type { Agent } from "@/agent/agent"
 import { PermissionNext } from "@/permission"
 import { Skill } from "@/skill"
+import { Flag } from "@/flag/flag"
+import { Log } from "../util/log"
+import { Filesystem } from "../util/filesystem"
+
+const log = Log.create({ service: "system-prompt" })
+
+const unifiedTemplate = Handlebars.compile(PROMPT_UNIFIED)
+
+async function resolveRelativeInstruction(instruction: string): Promise<string[]> {
+  if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
+    return Filesystem.globUp(instruction, Instance.directory, Instance.worktree).catch(() => [])
+  }
+  if (!Flag.OPENCODE_CONFIG_DIR) {
+    log.warn(
+      `Skipping relative instruction "${instruction}" - no OPENCODE_CONFIG_DIR set while project config is disabled`,
+    )
+    return []
+  }
+  return Filesystem.globUp(instruction, Flag.OPENCODE_CONFIG_DIR, Flag.OPENCODE_CONFIG_DIR).catch(() => [])
+}
 
 export namespace SystemPrompt {
+  export function instructions() {
+    return unifiedTemplate({ isCodex: true, isAnthropic: false, isGemini: false }).trim()
+  }
+
   export function provider(model: Provider.Model) {
-    if (model.api.id.includes("gpt-4") || model.api.id.includes("o1") || model.api.id.includes("o3"))
+    const isCodex = model.api.id.includes("gpt-5")
+    const isGemini = model.api.id.includes("gemini-")
+    const isAnthropic = model.api.id.includes("claude")
+
+    if (isCodex || isGemini || isAnthropic) {
+      return [unifiedTemplate({ isCodex, isGemini, isAnthropic })]
+    }
+
+    if (model.api.id.includes("gpt-") || model.api.id.includes("o1") || model.api.id.includes("o3"))
       return [PROMPT_BEAST]
-    if (model.api.id.includes("gpt")) return [PROMPT_CODEX]
-    if (model.api.id.includes("gemini-")) return [PROMPT_GEMINI]
-    if (model.api.id.includes("claude")) return [PROMPT_ANTHROPIC]
     if (model.api.id.toLowerCase().includes("trinity")) return [PROMPT_TRINITY]
     return [PROMPT_DEFAULT]
   }
