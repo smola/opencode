@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import os from "os"
 import path from "path"
 import { BashTool } from "../../src/tool/bash"
+import { sandboxCommand } from "../../src/sandbox/sandbox"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "../../src/util/filesystem"
 import { tmpdir } from "../fixture/fixture"
@@ -23,6 +24,63 @@ const ctx = {
 const projectRoot = path.join(__dirname, "../..")
 
 describe("tool.bash", () => {
+  test("builds bubblewrap command when sandbox is enabled", () => {
+    const result = sandboxCommand({
+      sandbox: { enabled: true, "read-only": true, network: false },
+      shell: "/bin/bash",
+      command: "echo hello",
+      cwd: "/tmp",
+    })
+    if (process.platform !== "linux" || !Bun.which("bwrap")) {
+      expect(result).toBeUndefined()
+      return
+    }
+    expect(result).toBeDefined()
+    expect(result!.command).toBe("/usr/bin/bwrap")
+    expect(result!.args).toContain("--ro-bind")
+    expect(result!.args).toContain("--unshare-net")
+    expect(result!.args).toEqual(expect.arrayContaining(["--chdir", "/tmp", "/bin/bash", "-lc", "echo hello"]))
+  })
+
+  test("does not build bubblewrap command when sandbox is disabled", () => {
+    const result = sandboxCommand({
+      sandbox: { enabled: false, "read-only": true, network: false },
+      shell: "/bin/bash",
+      command: "echo hello",
+      cwd: "/tmp",
+    })
+    expect(result).toBeUndefined()
+  })
+
+  test("does not build bubblewrap command when bwrap is unavailable", () => {
+    const bwrap = Bun.which("bwrap")
+    if (process.platform !== "linux" || bwrap) return
+    const result = sandboxCommand({
+      sandbox: { enabled: true, "read-only": false, network: true },
+      shell: "/bin/bash",
+      command: "echo hello",
+      cwd: "/tmp",
+    })
+    expect(result).toBeUndefined()
+  })
+
+  test("uses writable bind when read-only is false", () => {
+    const result = sandboxCommand({
+      sandbox: { enabled: true, "read-only": false, network: true },
+      shell: "/bin/bash",
+      command: "echo hello",
+      cwd: "/tmp",
+    })
+    if (process.platform !== "linux" || !Bun.which("bwrap")) {
+      expect(result).toBeUndefined()
+      return
+    }
+    expect(result).toBeDefined()
+    expect(result!.args).toContain("--bind")
+    expect(result!.args).not.toContain("--ro-bind")
+    expect(result!.args).not.toContain("--unshare-net")
+  })
+
   test("basic", async () => {
     await Instance.provide({
       directory: projectRoot,

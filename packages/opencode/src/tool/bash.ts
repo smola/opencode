@@ -1,5 +1,4 @@
 import z from "zod"
-import { spawn } from "child_process"
 import { Tool } from "./tool"
 import path from "path"
 import DESCRIPTION from "./bash.txt"
@@ -17,11 +16,18 @@ import { Shell } from "@/shell/shell"
 import { BashArity } from "@/permission/arity"
 import { Truncate } from "./truncate"
 import { Plugin } from "@/plugin"
+import { sandboxConfig, spawn } from "@/sandbox/sandbox"
 
 const MAX_METADATA_LENGTH = 30_000
 const DEFAULT_TIMEOUT = Flag.OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS || 2 * 60 * 1000
 
 export const log = Log.create({ service: "bash-tool" })
+type BashParams = {
+  command: string
+  timeout?: number
+  workdir?: string
+  description: string
+}
 
 const resolveWasm = (asset: string) => {
   if (asset.startsWith("file://")) return fileURLToPath(asset)
@@ -52,9 +58,10 @@ const parser = lazy(async () => {
 })
 
 // TODO: we may wanna rename this tool so it works better on other shells
-export const BashTool = Tool.define("bash", async () => {
+export const BashTool = Tool.define("bash", async (initCtx) => {
   const shell = Shell.acceptable()
   log.info("bash tool using shell", { shell })
+  const sandbox = sandboxConfig(initCtx?.agent)
 
   return {
     description: DESCRIPTION.replaceAll("${directory}", Instance.directory)
@@ -75,7 +82,7 @@ export const BashTool = Tool.define("bash", async () => {
           "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
         ),
     }),
-    async execute(params, ctx) {
+    async execute(params: BashParams, ctx) {
       const cwd = params.workdir || Instance.directory
       if (params.timeout !== undefined && params.timeout < 0) {
         throw new Error(`Invalid timeout value: ${params.timeout}. Timeout must be a positive number.`)
@@ -164,18 +171,22 @@ export const BashTool = Tool.define("bash", async () => {
         { cwd, sessionID: ctx.sessionID, callID: ctx.callID },
         { env: {} },
       )
-      const proc = spawn(params.command, {
-        shell,
-        cwd,
-        env: {
-          ...process.env,
-          ...shellEnv.env,
-          OPENCODE_SESSION_ID: ctx.sessionID,
+      const proc = spawn(
+        params.command,
+        {
+          shell,
+          cwd,
+          env: {
+            ...process.env,
+            ...shellEnv.env,
+            OPENCODE_SESSION_ID: ctx.sessionID,
+          },
+          stdio: ["ignore", "pipe", "pipe"],
+          detached: process.platform !== "win32",
+          windowsHide: process.platform === "win32",
         },
-        stdio: ["ignore", "pipe", "pipe"],
-        detached: process.platform !== "win32",
-        windowsHide: process.platform === "win32",
-      })
+        sandbox,
+      )
 
       let output = ""
 
