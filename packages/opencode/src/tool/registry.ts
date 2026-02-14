@@ -1,6 +1,7 @@
 import { PlanExitTool } from "./plan"
 import { QuestionTool } from "./question"
 import { BashTool } from "./bash"
+import { ExecTool } from "./exec"
 import { EditTool } from "./edit"
 import { GlobTool } from "./glob"
 import { GrepTool } from "./grep"
@@ -105,6 +106,7 @@ export namespace ToolRegistry {
       InvalidTool,
       ...(question ? [QuestionTool] : []),
       BashTool,
+      ExecTool,
       ReadTool,
       GlobTool,
       GrepTool,

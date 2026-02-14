@@ -1,0 +1,12 @@
+Executes a binary directly with argv-style arguments and optional timeout.
+
+Use this tool when you need structured command execution without shell parsing. Provide `command` as an array where the first item is the binary and the rest are arguments.
+
+Usage notes:
+- `command` is required and must contain at least one element. First element is the binary to execute. The rest of elements are its arguments.
+- `workdir` defaults to ${directory}
+- `timeout` is in milliseconds and defaults to 120000
+- Prefer specialized filesystem tools for read/write/search operations
+- Prefer the Exec tool to the Bash tool for simple commands
+- This tool does not use a shell, so variable replacement or globbing will not work. Prefer the Bash tool when that is needed.
+- Output is truncated after ${maxLines} lines or ${maxBytes} bytes, with full output stored on disk

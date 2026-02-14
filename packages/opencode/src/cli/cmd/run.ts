@@ -25,6 +25,7 @@ import { WebSearchTool } from "../../tool/websearch"
 import { TaskTool } from "../../tool/task"
 import { SkillTool } from "../../tool/skill"
 import { BashTool } from "../../tool/bash"
+import { ExecTool } from "../../tool/exec"
 import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util/locale"
 
@@ -197,6 +198,17 @@ function bash(info: ToolProps<typeof BashTool>) {
     {
       icon: "$",
       title: `${info.input.command}`,
+    },
+    output,
+  )
+}
+
+function exec(info: ToolProps<typeof ExecTool>) {
+  const output = info.part.state.status === "completed" ? info.part.state.output?.trim() : undefined
+  block(
+    {
+      icon: "$",
+      title: `${info.input.command.join(" ")}`,
     },
     output,
   )
@@ -420,6 +432,7 @@ export const RunCommand = cmd({
       function tool(part: ToolPart) {
         try {
           if (part.tool === "bash") return bash(props<typeof BashTool>(part))
+          if (part.tool === "exec") return exec(props<typeof ExecTool>(part))
           if (part.tool === "glob") return glob(props<typeof GlobTool>(part))
           if (part.tool === "grep") return grep(props<typeof GrepTool>(part))
           if (part.tool === "list") return list(props<typeof ListTool>(part))

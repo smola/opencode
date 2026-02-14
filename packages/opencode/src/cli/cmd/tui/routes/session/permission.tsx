@@ -297,6 +297,26 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
               }
             }
 
+            if (permission === "exec") {
+              const title =
+                typeof data.description === "string" && data.description ? data.description : "Execute command"
+              const argv = Array.isArray(data.command)
+                ? data.command.filter((item): item is string => typeof item === "string")
+                : []
+              const command = argv.join(" ")
+              return {
+                icon: "$",
+                title,
+                body: (
+                  <Show when={command}>
+                    <box paddingLeft={1}>
+                      <text fg={theme.text}>{"$ " + command}</text>
+                    </box>
+                  </Show>
+                ),
+              }
+            }
+
             if (permission === "task") {
               const type = typeof data.subagent_type === "string" ? data.subagent_type : "Unknown"
               const desc = typeof data.description === "string" ? data.description : ""
