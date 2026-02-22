@@ -39,6 +39,12 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
+> **Note**
+> This repository is a soft-fork of [`anomalyco/opencode`](https://github.com/anomalyco/opencode) with a small set of targeted changes on top of upstream `dev` branch:
+> - Exposed `OPENCODE_SESSION_ID` and `OPENCODE_TOOL_PART_ID` to child processes spawned by tools ([#15739](https://github.com/anomalyco/opencode/issues/15739)).
+> - Improved Bash/Grep/Glob guidance and examples so models prefer the dedicated filesystem tools and understand Ripgrep-style regex support.
+> - Added a micro-benchmark suite for filesystem-tool usage under `benchmarks/`.
+
 [![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
