@@ -39,6 +39,16 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
+> **Note**
+> This repository is a soft-fork of [`anomalyco/opencode`](https://github.com/anomalyco/opencode) with a small set of targeted changes on top of upstream `dev` branch:
+> - Added a new `exec` tool for argv-style process execution ([#2206](https://github.com/anomalyco/opencode/issues/2206)).
+> - Added bubblewrap sandboxing ([#2242](https://github.com/anomalyco/opencode/issues/2242)).
+> - Add `--dangerously-skip-permissions` ([#8463](https://github.com/anomalyco/opencode/issues/8463)).
+> - Exposed `OPENCODE_SESSION_ID` to child processes spawned by tools ([#9292](https://github.com/anomalyco/opencode/issues/9292)).
+> - Unified system prompts for all providers ([#13605](https://github.com/anomalyco/opencode/issues/13605).
+> - Improved tool/prompt behavior around Bash/Grep/Glob guidance and naming clarity ([#10438](https://github.com/anomalyco/opencode/issues/10438)).
+> - Added a micro-benchmark suite.
+
 [![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
