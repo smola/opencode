@@ -50,6 +50,7 @@ import { Truncate } from "@/tool/truncate"
 import { decodeDataUrl } from "@/util/data-url"
 import { Process } from "@/util/process"
 import { SessionLoop } from "./loop"
+import { GoalLock } from "./goal-lock"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -65,6 +66,8 @@ IMPORTANT:
 const STRUCTURED_OUTPUT_SYSTEM_PROMPT = `IMPORTANT: The user has requested structured output. You MUST use the StructuredOutput tool to provide your final response. Do NOT respond with plain text - you MUST call the StructuredOutput tool with your answer formatted according to the schema.`
 
 const LOOP_SYSTEM_PROMPT = `IMPORTANT: You are running inside the tool loop. When you have finished the task and do not need to call more tools, call the ExitLoop tool.`
+
+const GOAL_LOCK_SYSTEM_PROMPT = `IMPORTANT: A goal lock is active. Keep using tools until the goal is complete, then call ExitLoop. ExitLoop runs the verification command and stays denied until that command succeeds.`
 
 const ANSWER_SYSTEM_PROMPT = `ExitLoop was approved. Write your final answer to the user now. Tools are disabled for this turn.`
 
@@ -610,6 +613,7 @@ export namespace SessionPrompt {
       const bypassAgentCheck = lastUserMsg?.parts.some((p) => p.type === "agent") ?? false
 
       const answer = SessionLoop.answering(sessionID)
+      const locked = GoalLock.locked(sessionID)
       const tools = await resolveTools({
         agent,
         session,
@@ -668,7 +672,8 @@ export namespace SessionPrompt {
       ]
       const format = lastUser.format ?? { type: "text" }
       if (answer) system.push(ANSWER_SYSTEM_PROMPT)
-      if (!answer && SessionLoop.enabled(agent)) system.push(LOOP_SYSTEM_PROMPT)
+      if (!answer && locked) system.push(GOAL_LOCK_SYSTEM_PROMPT)
+      if (!answer && !locked && SessionLoop.enabled(agent)) system.push(LOOP_SYSTEM_PROMPT)
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
       }
@@ -696,7 +701,7 @@ export namespace SessionPrompt {
         ],
         tools,
         model,
-        toolChoice: toolChoice({ format: format.type, loop }),
+        toolChoice: toolChoice({ format: format.type, loop, locked }),
       })
       if (answer) SessionLoop.clear(sessionID)
 
@@ -950,9 +955,9 @@ export namespace SessionPrompt {
   }
 
   /** @internal Exported for testing */
-  export function toolChoice(input: { format: "text" | "json_schema"; loop: boolean }) {
+  export function toolChoice(input: { format: "text" | "json_schema"; loop: boolean; locked: boolean }) {
     if (input.format === "json_schema") return "required" as const
-    if (input.loop) return "required" as const
+    if (input.loop || input.locked) return "required" as const
     return undefined
   }
 

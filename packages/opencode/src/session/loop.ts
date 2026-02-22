@@ -1,6 +1,7 @@
 import type { MessageV2 } from "./message-v2"
 import { Instance } from "@/project/instance"
 import { Plugin } from "@/plugin"
+import type { Tool } from "@/tool/tool"
 
 export namespace SessionLoop {
   type Hook = (input: {
@@ -9,6 +10,8 @@ export namespace SessionLoop {
     callID?: string
     agent: string
     messages: MessageV2.WithParts[]
+    abort: AbortSignal
+    ask: Tool.Context["ask"]
   }) => string | void | Promise<string | void>
 
   const state = Instance.state(() => ({
@@ -45,6 +48,8 @@ export namespace SessionLoop {
     callID?: string
     agent: string
     messages: MessageV2.WithParts[]
+    abort: AbortSignal
+    ask: Tool.Context["ask"]
   }) {
     const reasons = [] as string[]
     for (const hook of Object.values(state().hooks)) {

@@ -1,0 +1,11 @@
+Lock the current session to a concrete goal with an executable exit criterion.
+
+Parameters:
+- goal: natural language description of the goal
+- verify_command: bash command that must exit 0 for completion
+
+After lock_goal succeeds:
+- future model steps are forced to make tool calls
+- session remains locked until ExitLoop verification succeeds
+
+Use this when you need strict completion verification before finishing.

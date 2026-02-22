@@ -1211,6 +1211,7 @@ export namespace Config {
         .object({
           disable_paste_summary: z.boolean().optional(),
           batch_tool: z.boolean().optional().describe("Enable the batch tool"),
+          goal_lock_tool: z.boolean().optional().describe("Enable the lock_goal tool"),
           openTelemetry: z
             .boolean()
             .optional()

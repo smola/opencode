@@ -1489,7 +1489,7 @@ export type Config = {
      */
     batch_tool?: boolean
     /**
-     * Enable lock_goal and exit tools
+     * Enable the lock_goal tool
      */
     goal_lock_tool?: boolean
     /**

@@ -13,6 +13,8 @@ export const ExitLoopTool = Tool.define("ExitLoop", {
       callID: ctx.callID,
       agent: ctx.agent,
       messages: ctx.messages,
+      abort: ctx.abort,
+      ask: ctx.ask,
     })
 
     if (reasons.length) {
