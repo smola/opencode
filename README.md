@@ -43,6 +43,10 @@
 > This repository is a soft-fork of [`anomalyco/opencode`](https://github.com/anomalyco/opencode) with a small set of targeted changes on top of upstream `dev` branch:
 > - Added a new `exec` tool for argv-style process execution ([#2206](https://github.com/anomalyco/opencode/issues/2206)).
 > - Added bubblewrap sandboxing ([#2242](https://github.com/anomalyco/opencode/issues/2242)).
+>   - Ubuntu 24.04 requirement for sandboxing:
+>     1. `sudo apt install apparmor-profiles`
+>     2. `sudo ln -s /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/`
+>     3. `sudo systemctl reload apparmor`
 > - Add `--dangerously-skip-permissions` ([#8463](https://github.com/anomalyco/opencode/issues/8463)).
 > - Exposed `OPENCODE_SESSION_ID` to child processes spawned by tools ([#9292](https://github.com/anomalyco/opencode/issues/9292)).
 > - Unified system prompts for all providers ([#13605](https://github.com/anomalyco/opencode/issues/13605).
