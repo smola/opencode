@@ -1057,6 +1057,7 @@ export type PermissionConfig =
       grep?: PermissionRuleConfig
       list?: PermissionRuleConfig
       bash?: PermissionRuleConfig
+      exec?: PermissionRuleConfig
       task?: PermissionRuleConfig
       external_directory?: PermissionRuleConfig
       todowrite?: PermissionActionConfig
@@ -1487,6 +1488,10 @@ export type Config = {
      * Enable the batch tool
      */
     batch_tool?: boolean
+    /**
+     * Enable lock_goal and exit tools
+     */
+    goal_lock_tool?: boolean
     /**
      * Enable OpenTelemetry spans for AI SDK calls (using the 'experimental_telemetry' flag)
      */
