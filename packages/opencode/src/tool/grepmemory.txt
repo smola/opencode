@@ -1,0 +1,11 @@
+Search memory card content recursively from a memory path.
+
+Paths are absolute and filesystem-like.
+Examples:
+- /
+- /session/current
+- /workspace/current
+- /global/note.md
+
+GrepMemory searches the markdown content of memory cards using a JavaScript regular expression source.
+It can search global memory, all workspaces, and all sessions.

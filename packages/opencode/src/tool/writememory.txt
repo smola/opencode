@@ -1,0 +1,21 @@
+Write a memory card to the current session, current workspace, or global memory.
+
+When the agent learns something new that should be recalled later, it should write a card at the appropriate scope.
+This is especially useful when:
+- the user repeatedly corrects the agent about something it is doing wrong and the fix should be remembered for next time
+- the agent had to backtrack from an incorrect approach and the lesson could help avoid the same mistake in the future
+
+WriteMemory should be used proactively when the lesson is clear.
+Do not ask the user first just to confirm writing a session or workspace memory card unless the intended scope is genuinely ambiguous.
+
+Writable paths must start with one of:
+- /session/current/
+- /workspace/current/
+- /global/
+
+Do not write to historical or explicit read-only aliases such as:
+- /session/<timestamp-id>/...
+- /workspace/<workspace-path>/...
+
+Use version 1 for a new card.
+For updates, read the latest card first and write the next version number.

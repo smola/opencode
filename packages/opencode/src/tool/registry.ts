@@ -34,6 +34,7 @@ import { Glob } from "../util/glob"
 import { pathToFileURL } from "url"
 import { ExitLoopTool } from "./loop"
 import { enableGoalLock, LockGoalTool } from "./goal-lock"
+import { GrepMemoryTool, ReadMemoryTool, WriteMemoryTool } from "./memory"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -111,10 +112,13 @@ export namespace ToolRegistry {
       BashTool,
       ExecTool,
       ReadTool,
+      ReadMemoryTool,
+      GrepMemoryTool,
       GlobTool,
       GrepTool,
       EditTool,
       WriteTool,
+      WriteMemoryTool,
       TaskTool,
       WebFetchTool,
       TodoWriteTool,
