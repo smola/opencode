@@ -291,6 +291,7 @@ export namespace LLM {
       PermissionNext.merge(input.agent.permission, input.permission ?? []),
     )
     for (const tool of Object.keys(input.tools)) {
+      if (tool === "ExitLoop") continue
       if (input.user.tools?.[tool] === false || disabled.has(tool)) {
         delete input.tools[tool]
       }

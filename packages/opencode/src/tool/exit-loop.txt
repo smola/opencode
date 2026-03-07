@@ -1,0 +1,9 @@
+Attempt to stop the tool loop.
+
+If you want to finish the task or answer the user, you must call this first.
+
+Call this as soon as you have completed the task or have enough information/results to answer the user. Do not keep making tool calls once you can already give the final answer.
+
+Behavior:
+- If exit is approved, the next turn has tools disabled and you must answer the user directly.
+- If exit is denied, you will get the reasons and must continue working.

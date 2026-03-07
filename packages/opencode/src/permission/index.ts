@@ -49,4 +49,6 @@ export namespace PermissionNext {
   export async function list() {
     return runPromiseInstance(S.Service.use((s) => s.list()))
   }
+
+  export const setSkipPermissions = S.setSkipPermissions
 }

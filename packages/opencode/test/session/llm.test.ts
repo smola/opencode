@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import path from "path"
-import { tool, type ModelMessage } from "ai"
+import { tool, jsonSchema, type ModelMessage } from "ai"
 import z from "zod"
 import { LLM } from "../../src/session/llm"
 import { Global } from "../../src/global"
@@ -230,7 +230,7 @@ describe("session.llm.stream", () => {
       throw new Error("Server not initialized")
     }
 
-    const providerID = "alibaba"
+    const providerID = ProviderID.make("alibaba")
     const modelID = "qwen-plus"
     const fixture = await loadFixture(providerID, modelID)
     const provider = fixture.provider
@@ -753,6 +753,104 @@ describe("session.llm.stream", () => {
         expect(config?.temperature).toBe(0.3)
         expect(config?.topP).toBe(0.8)
         expect(config?.maxOutputTokens).toBe(ProviderTransform.maxOutputTokens(resolved))
+      },
+    })
+  })
+
+  test("keeps ExitLoop even when the user disables tools", async () => {
+    const server = state.server
+    if (!server) {
+      throw new Error("Server not initialized")
+    }
+
+    const providerID = ProviderID.make("alibaba")
+    const modelID = "qwen-plus"
+    const fixture = await loadFixture(providerID, modelID)
+    const provider = fixture.provider
+    const model = fixture.model
+
+    const request = waitRequest(
+      "/chat/completions",
+      new Response(createChatStream("Hello"), {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      }),
+    )
+
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(
+          path.join(dir, "opencode.json"),
+          JSON.stringify({
+            $schema: "https://opencode.ai/config.json",
+            enabled_providers: [providerID],
+            provider: {
+              [providerID]: {
+                options: {
+                  apiKey: "test-key",
+                  baseURL: `${server.url.origin}/v1`,
+                },
+              },
+            },
+          }),
+        )
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const resolved = await Provider.getModel(providerID, ModelID.make(model.id))
+        const sessionID = SessionID.make("session-test-exitloop")
+        const agent = {
+          name: "test",
+          mode: "primary",
+          options: {},
+          permission: [{ permission: "*", pattern: "*", action: "allow" }],
+          temperature: 0.4,
+        } satisfies Agent.Info
+
+        const user = {
+          id: MessageID.make("user-exitloop"),
+          sessionID,
+          role: "user",
+          time: { created: Date.now() },
+          agent: agent.name,
+          model: { providerID, modelID: resolved.id },
+          tools: {
+            ExitLoop: false,
+            Read: false,
+          },
+        } satisfies MessageV2.User
+
+        const stream = await LLM.stream({
+          user,
+          sessionID,
+          model: resolved,
+          agent,
+          system: ["You are a helpful assistant."],
+          abort: new AbortController().signal,
+          messages: [{ role: "user", content: "Hello" }],
+          tools: {
+            ExitLoop: {
+              description: "Exit the loop",
+              inputSchema: jsonSchema({ type: "object", properties: {} }),
+            },
+            Read: {
+              description: "Read a file",
+              inputSchema: jsonSchema({ type: "object", properties: {} }),
+            },
+          },
+        })
+
+        for await (const _ of stream.fullStream) {
+        }
+
+        const capture = await request
+        const names = ((capture.body.tools as Array<any> | undefined) ?? []).map((item) => item.function?.name)
+
+        expect(names).toContain("ExitLoop")
+        expect(names).not.toContain("Read")
       },
     })
   })

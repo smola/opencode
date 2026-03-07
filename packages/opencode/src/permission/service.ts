@@ -17,6 +17,11 @@ import { PermissionID } from "./schema"
 export namespace Permission {
   const log = Log.create({ service: "permission" })
 
+  let skipPermissions = false
+  export function setSkipPermissions(v: boolean) {
+    skipPermissions = v
+  }
+
   export const Action = z.enum(["allow", "deny", "ask"]).meta({
     ref: "PermissionAction",
   })
@@ -157,6 +162,7 @@ export namespace Permission {
         }
 
         if (!needsAsk) return
+        if (skipPermissions) return
 
         const id = request.id ?? PermissionID.ascending()
         const info: Request = {

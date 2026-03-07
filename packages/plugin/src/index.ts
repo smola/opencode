@@ -211,6 +211,19 @@ export interface Hooks {
       metadata: any
     },
   ) => Promise<void>
+  "experimental.session.exit"?: (
+    input: {
+      sessionID: string
+      messageID: string
+      callID?: string
+      agent: string
+      messages: {
+        info: Message
+        parts: Part[]
+      }[]
+    },
+    output: { reasons: string[] },
+  ) => Promise<void>
   "experimental.chat.messages.transform"?: (
     input: {},
     output: {

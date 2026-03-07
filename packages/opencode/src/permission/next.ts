@@ -250,10 +250,12 @@ export namespace PermissionNext {
   }
 
   const EDIT_TOOLS = ["edit", "write", "patch", "multiedit"]
+  const ALWAYS = new Set(["ExitLoop"])
 
   export function disabled(tools: string[], ruleset: Ruleset): Set<string> {
     const result = new Set<string>()
     for (const tool of tools) {
+      if (ALWAYS.has(tool)) continue
       const permission = EDIT_TOOLS.includes(tool) ? "edit" : tool
 
       const rule = ruleset.findLast((r) => Wildcard.match(permission, r.permission))

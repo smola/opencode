@@ -32,6 +32,7 @@ import { Truncate } from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
 import { Glob } from "../util/glob"
 import { pathToFileURL } from "url"
+import { ExitLoopTool } from "./loop"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -120,6 +121,7 @@ export namespace ToolRegistry {
       CodeSearchTool,
       SkillTool,
       ApplyPatchTool,
+      ExitLoopTool,
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool] : []),
