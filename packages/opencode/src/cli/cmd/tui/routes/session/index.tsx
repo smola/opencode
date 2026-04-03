@@ -85,6 +85,7 @@ import { getScrollAcceleration } from "../../util/scroll"
 import { TuiPluginRuntime } from "../../plugin"
 import { DialogGoUpsell } from "../../component/dialog-go-upsell"
 import { SessionRetry } from "@/session/retry"
+import { command, terminal } from "./tool-render"
 
 addDefaultParsers(parsers.parsers)
 
@@ -1528,6 +1529,10 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
     get tool() {
       return props.part.tool
     },
+    get title() {
+      const state = props.part.state
+      if (state.status === "completed" || state.status === "running") return state.title
+    },
     get part() {
       return props.part
     },
@@ -1581,6 +1586,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "skill"}>
           <Skill {...toolprops} />
         </Match>
+        <Match when={terminal(toolprops.metadata)}>
+          <TerminalTool {...toolprops} />
+        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1594,6 +1602,7 @@ type ToolProps<T> = {
   metadata: Partial<Tool.InferMetadata<T>>
   permission: Record<string, any>
   tool: string
+  title?: string
   output?: string
   part: ToolPart
 }
@@ -1835,6 +1844,49 @@ function Bash(props: ToolProps<typeof BashTool>) {
       <Match when={true}>
         <InlineTool icon="$" pending="Writing command..." complete={props.input.command} part={props.part}>
           {props.input.command}
+        </InlineTool>
+      </Match>
+    </Switch>
+  )
+}
+
+function TerminalTool(props: ToolProps<any>) {
+  const { theme } = useTheme()
+  const isRunning = createMemo(() => props.part.state.status === "running")
+  const cmd = createMemo(() => command({ tool: props.tool, title: props.title, input: props.input, metadata: props.metadata }))
+  const output = createMemo(() => stripAnsi((props.output ?? props.metadata.output ?? "").trim()))
+  const [expanded, setExpanded] = createSignal(false)
+  const lines = createMemo(() => output().split("\n"))
+  const overflow = createMemo(() => lines().length > 10)
+  const limited = createMemo(() => {
+    if (expanded() || !overflow()) return output()
+    return [...lines().slice(0, 10), "…"].join("\n")
+  })
+  const title = createMemo(() => `# ${props.title || props.tool}`)
+
+  return (
+    <Switch>
+      <Match when={props.output !== undefined || props.metadata.output !== undefined}>
+        <BlockTool
+          title={title()}
+          part={props.part}
+          spinner={isRunning()}
+          onClick={overflow() ? () => setExpanded((prev) => !prev) : undefined}
+        >
+          <box gap={1}>
+            <text fg={theme.text}>$ {cmd()}</text>
+            <Show when={output()}>
+              <text fg={theme.text}>{limited()}</text>
+            </Show>
+            <Show when={overflow()}>
+              <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+            </Show>
+          </box>
+        </BlockTool>
+      </Match>
+      <Match when={true}>
+        <InlineTool icon="$" pending="Writing command..." complete={cmd()} part={props.part}>
+          {cmd()}
         </InlineTool>
       </Match>
     </Switch>

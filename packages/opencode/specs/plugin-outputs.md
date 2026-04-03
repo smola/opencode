@@ -218,7 +218,6 @@ Do **not** turn this into a general tool-renderer cleanup. The goal is only to a
 
 Add focused UI tests, preferably in a new file such as `packages/ui/src/components/terminal-tool.test.ts`, covering:
 
-- a non-`bash` tool with `metadata.opencode.presentation.type === "terminal"` selects the terminal renderer
 - a non-`bash` tool with `metadata.presentation.type === "terminal"` selects the terminal renderer
 - `command` populates the `$ ...` line
 - tools without that metadata still use `GenericTool`

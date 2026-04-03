@@ -58,6 +58,7 @@ import { patchFiles } from "./apply-patch-file"
 import { animate } from "motion"
 import { useLocation } from "@solidjs/router"
 import { attached, inline, kind } from "./message-file"
+import { command, select } from "./tool-render"
 
 function ShellSubmessage(props: { text: string; animate?: boolean }) {
   let widthRef: HTMLSpanElement | undefined
@@ -1336,7 +1337,13 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
     return taskId()
   })
 
-  const render = createMemo(() => ToolRegistry.render(part().tool) ?? GenericTool)
+  const render = createMemo(() => {
+    const named = ToolRegistry.render(part().tool)
+    const next = select(!!named, partMetadata())
+    if (next === "named") return named ?? GenericTool
+    if (next === "terminal") return TerminalTool
+    return GenericTool
+  })
 
   return (
     <Show when={!hideQuestion()}>
@@ -1824,69 +1831,102 @@ ToolRegistry.register({
   },
 })
 
+function ShellTool(
+  props: Pick<ToolProps, "status" | "hideDetails" | "defaultOpen" | "forceOpen" | "locked"> & {
+    title: string
+    subtitle?: string
+    text: string
+  },
+) {
+  const i18n = useI18n()
+  const pending = () => props.status === "pending" || props.status === "running"
+  const sawPending = pending()
+  const [copied, setCopied] = createSignal(false)
+
+  const handleCopy = async () => {
+    if (!props.text) return
+    await navigator.clipboard.writeText(props.text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <BasicTool
+      icon="console"
+      status={props.status}
+      hideDetails={props.hideDetails}
+      defaultOpen={props.defaultOpen}
+      forceOpen={props.forceOpen}
+      locked={props.locked}
+      trigger={
+        <div data-slot="basic-tool-tool-info-structured">
+          <div data-slot="basic-tool-tool-info-main">
+            <span data-slot="basic-tool-tool-title">
+              <TextShimmer text={props.title} active={pending()} />
+            </span>
+            <Show when={!pending() && props.subtitle}>
+              <ShellSubmessage text={props.subtitle!} animate={sawPending} />
+            </Show>
+          </div>
+        </div>
+      }
+    >
+      <div data-component="bash-output">
+        <div data-slot="bash-copy">
+          <Tooltip
+            value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copy")}
+            placement="top"
+            gutter={4}
+          >
+            <IconButton
+              icon={copied() ? "check" : "copy"}
+              size="small"
+              variant="secondary"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleCopy}
+              aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copy")}
+            />
+          </Tooltip>
+        </div>
+        <div data-slot="bash-scroll" data-scrollable>
+          <pre data-slot="bash-pre">
+            <code>{props.text}</code>
+          </pre>
+        </div>
+      </div>
+    </BasicTool>
+  )
+}
+
+const TerminalTool: ToolComponent = (props) => {
+  const i18n = useI18n()
+  const called = () => i18n.t("ui.basicTool.called", { tool: props.tool })
+  const title = () => props.title || called()
+  const text = createMemo(() => {
+    const out = stripAnsi(props.output || props.metadata.output || "")
+    const cmd = command({
+      title: props.title,
+      input: props.input,
+      metadata: props.metadata,
+      called: called(),
+    })
+    return `$ ${cmd}${out ? "\n\n" + out : ""}`
+  })
+
+  return <ShellTool {...props} title={title()} text={text()} />
+}
+
 ToolRegistry.register({
   name: "bash",
   render(props) {
     const i18n = useI18n()
-    const pending = () => props.status === "pending" || props.status === "running"
-    const sawPending = pending()
     const text = createMemo(() => {
       const cmd = props.input.command ?? props.metadata.command ?? ""
       const out = stripAnsi(props.output || props.metadata.output || "")
       return `$ ${cmd}${out ? "\n\n" + out : ""}`
     })
-    const [copied, setCopied] = createSignal(false)
 
-    const handleCopy = async () => {
-      const content = text()
-      if (!content) return
-      await navigator.clipboard.writeText(content)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-
-    return (
-      <BasicTool
-        {...props}
-        icon="console"
-        trigger={
-          <div data-slot="basic-tool-tool-info-structured">
-            <div data-slot="basic-tool-tool-info-main">
-              <span data-slot="basic-tool-tool-title">
-                <TextShimmer text={i18n.t("ui.tool.shell")} active={pending()} />
-              </span>
-              <Show when={!pending() && props.input.description}>
-                <ShellSubmessage text={props.input.description} animate={sawPending} />
-              </Show>
-            </div>
-          </div>
-        }
-      >
-        <div data-component="bash-output">
-          <div data-slot="bash-copy">
-            <Tooltip
-              value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copy")}
-              placement="top"
-              gutter={4}
-            >
-              <IconButton
-                icon={copied() ? "check" : "copy"}
-                size="small"
-                variant="secondary"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleCopy}
-                aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copy")}
-              />
-            </Tooltip>
-          </div>
-          <div data-slot="bash-scroll" data-scrollable>
-            <pre data-slot="bash-pre">
-              <code>{text()}</code>
-            </pre>
-          </div>
-        </div>
-      </BasicTool>
-    )
+    return <ShellTool {...props} title={i18n.t("ui.tool.shell")} subtitle={props.input.description} text={text()} />
   },
 })
 
