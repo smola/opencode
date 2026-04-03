@@ -1231,6 +1231,7 @@ export interface ToolProps {
   input: Record<string, any>
   metadata: Record<string, any>
   tool: string
+  title?: string
   output?: string
   status?: string
   hideDetails?: boolean
@@ -1313,6 +1314,10 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const emptyMetadata: Record<string, any> = {}
 
   const input = () => part().state?.input ?? emptyInput
+  const partTitle = () => {
+    const state = part().state
+    if (state.status === "completed" || state.status === "running") return state.title
+  }
   // @ts-expect-error
   const partMetadata = () => part().state?.metadata ?? emptyMetadata
   const taskId = createMemo(() => {
@@ -1365,6 +1370,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
               component={render()}
               input={input()}
               tool={part().tool}
+              title={partTitle()}
               metadata={partMetadata()}
               // @ts-expect-error
               output={part().state.output}

@@ -329,6 +329,8 @@ async execute(args, context) {
 
 The final completed tool state preserves both the last `title` and the last `metadata` values set through `context.metadata(...)`.
 
+If a custom tool does not have a specialized renderer, the default tool card now prefers the completed `title` when present and shows the completed string `output` in the fallback UI.
+
 ---
 
 ### Logging

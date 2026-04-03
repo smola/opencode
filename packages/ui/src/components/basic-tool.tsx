@@ -260,24 +260,57 @@ function args(input: Record<string, unknown> | undefined) {
     .slice(0, 3)
 }
 
+export function head(props: {
+  called: string
+  title?: string
+  status?: string
+  input?: Record<string, unknown>
+}) {
+  return {
+    title: props.status === "completed" && props.title ? props.title : props.called,
+    subtitle: label(props.input),
+    args: args(props.input),
+  }
+}
+
+export function body(status?: string, output?: string) {
+  if (status !== "completed") return
+  if (!output?.trim()) return
+  return output
+}
+
 export function GenericTool(props: {
   tool: string
+  title?: string
   status?: string
   hideDetails?: boolean
   input?: Record<string, unknown>
+  output?: string
 }) {
   const i18n = useI18n()
+  const output = () => body(props.status, props.output)
 
   return (
     <BasicTool
       icon="mcp"
       status={props.status}
-      trigger={{
-        title: i18n.t("ui.basicTool.called", { tool: props.tool }),
-        subtitle: label(props.input),
-        args: args(props.input),
-      }}
+      trigger={head({
+        called: i18n.t("ui.basicTool.called", { tool: props.tool }),
+        title: props.title,
+        status: props.status,
+        input: props.input,
+      })}
       hideDetails={props.hideDetails}
-    />
+    >
+      <Show when={output()}>
+        {(value) => (
+          <div data-component="generic-tool-output">
+            <div data-slot="generic-tool-output-body" style={{ "white-space": "pre-wrap" }}>
+              {value()}
+            </div>
+          </div>
+        )}
+      </Show>
+    </BasicTool>
   )
 }
