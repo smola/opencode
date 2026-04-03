@@ -3,11 +3,61 @@ import path from "path"
 import fs from "fs/promises"
 import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
+import { Agent } from "../../src/agent/agent"
 import { ToolRegistry } from "../../src/tool/registry"
+import { ProviderID, ModelID } from "../../src/provider/schema"
+import { MessageID, SessionID } from "../../src/session/schema"
 
 afterEach(async () => {
   await Instance.disposeAll()
 })
+
+const model = {
+  providerID: ProviderID.make("test"),
+  modelID: ModelID.make("test"),
+}
+
+async function run(src: string) {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      const opencodeDir = path.join(dir, ".opencode")
+      await fs.mkdir(opencodeDir, { recursive: true })
+
+      const toolsDir = path.join(opencodeDir, "tools")
+      await fs.mkdir(toolsDir, { recursive: true })
+
+      await Bun.write(path.join(toolsDir, "hello.ts"), src)
+    },
+  })
+
+  return await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const defs = await ToolRegistry.tools({
+        ...model,
+        agent: await Agent.get(await Agent.defaultAgent()),
+      })
+      const tool = defs.find((item) => item.id === "hello")
+      if (!tool) throw new Error(`missing hello tool: ${defs.map((item) => item.id).join(", ")}`)
+      const live: { title?: string; metadata?: Record<string, unknown> }[] = []
+      const result = await tool.execute(
+        {},
+        {
+          sessionID: SessionID.make("session_test"),
+          messageID: MessageID.make("message_test"),
+          agent: "test",
+          abort: new AbortController().signal,
+          messages: [],
+          metadata(input) {
+            live.push(input)
+          },
+          async ask() {},
+        },
+      )
+      return { live, result }
+    },
+  })
+}
 
 describe("tool.registry", () => {
   test("loads tools from .opencode/tool (singular)", async () => {
@@ -153,5 +203,76 @@ describe("tool.registry", () => {
         expect(ids).toContain("cowsay")
       },
     })
+  })
+
+  test("preserves title set through plugin metadata", async () => {
+    const result = await run([
+      "export default {",
+      "  description: 'hello tool',",
+      "  args: {},",
+      "  execute: async (_, context) => {",
+      "    context.metadata({ title: 'hello title' })",
+      "    return 'hello world'",
+      "  },",
+      "}",
+      "",
+    ].join("\n"))
+
+    expect(result.live).toEqual([{ title: "hello title" }])
+    expect(result.result.title).toBe("hello title")
+    expect(result.result.metadata).toEqual({ truncated: false })
+  })
+
+  test("preserves plugin metadata on completion", async () => {
+    const result = await run([
+      "export default {",
+      "  description: 'hello tool',",
+      "  args: {},",
+      "  execute: async (_, context) => {",
+      "    context.metadata({ metadata: { foo: 'bar', count: 1 } })",
+      "    return 'hello world'",
+      "  },",
+      "}",
+      "",
+    ].join("\n"))
+
+    expect(result.result.metadata).toEqual({ foo: "bar", count: 1, truncated: false })
+  })
+
+  test("merges truncation metadata onto plugin metadata", async () => {
+    const result = await run([
+      "export default {",
+      "  description: 'hello tool',",
+      "  args: {},",
+      "  execute: async (_, context) => {",
+      "    context.metadata({ metadata: { foo: 'bar' } })",
+      `    return ${JSON.stringify("x".repeat(60 * 1024))}`,
+      "  },",
+      "}",
+      "",
+    ].join("\n"))
+
+    expect(result.result.metadata.foo).toBe("bar")
+    expect(result.result.metadata.truncated).toBe(true)
+    expect(typeof result.result.metadata.outputPath).toBe("string")
+  })
+
+  test("keeps title and metadata in the non-truncated path", async () => {
+    const result = await run([
+      "export default {",
+      "  description: 'hello tool',",
+      "  args: {},",
+      "  execute: async (_, context) => {",
+      "    context.metadata({ title: 'hello title' })",
+      "    context.metadata({ metadata: { foo: 'bar', mode: 'small' } })",
+      "    return 'hello world'",
+      "  },",
+      "}",
+      "",
+    ].join("\n"))
+
+    expect(result.result.title).toBe("hello title")
+    expect(result.result.metadata).toEqual({ foo: "bar", mode: "small", truncated: false })
+    expect(result.result.output).toBe("hello world")
   })
 })

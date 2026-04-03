@@ -312,6 +312,23 @@ Your custom tools will be available to opencode alongside built-in tools.
 If a plugin tool uses the same name as a built-in tool, the plugin tool takes precedence.
 :::
 
+Custom tools should continue returning a plain string from `execute`. If you want to shape the tool state shown in the UI, call `context.metadata(...)` inside `execute`:
+
+```ts title=".opencode/plugins/custom-tools.ts"
+async execute(args, context) {
+  context.metadata({
+    title: `Inspect ${args.foo}`,
+    metadata: {
+      foo: args.foo,
+    },
+  })
+
+  return `Hello ${args.foo}`
+}
+```
+
+The final completed tool state preserves both the last `title` and the last `metadata` values set through `context.metadata(...)`.
+
 ---
 
 ### Logging
