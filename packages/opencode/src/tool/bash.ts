@@ -308,6 +308,8 @@ async function shellEnv(ctx: Tool.Context, cwd: string) {
   return {
     ...process.env,
     ...extra.env,
+    OPENCODE_SESSION_ID: ctx.sessionID,
+    ...(ctx.callID ? { OPENCODE_TOOL_PART_ID: ctx.callID } : {}),
   }
 }
 
